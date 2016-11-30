@@ -3,14 +3,15 @@
 import random
 import sys
 import pygame
+import os
 
 pygame.init()
 #dimensions for display screen
-display_screen = 600, 600
+display_screen = screen_w, screen_h = 600, 600
 
 #bricks
 br_width = 50
-br_height = 25
+br_height = 20
 
 #paddle
 p_width = 100
@@ -36,13 +37,28 @@ playing = 1
 won = 2
 game_over = 3
 
-class Bricks:
-	def __init__(self):
-		pygame.init()
-		self.screen = pygame.display.set_mode(display_screen)
-		self.clock = pygame.time.Clock()
-		self.init_game()
 
+screen = pygame.display.set_mode(display_screen)
+screen.fill(background)
+
+bg_image = (pygame.image.load('start.png'), pygame.image.load('game.png'), pygame.image.load('won.png'), pygame.image.load('lose.png'))
+
+class Bricks(pygame.sprite.Sprite):
+	image = None
+	def __init__(self):
+		pygame.sprite.Sprite.__init__(self)
+		pygame.init()
+		#self.clock = pygame.time.Clock()
+		if Bricks.image is None:
+			Bricks.image = pygame.image.load('logo.png')
+		self.image = Bricks.image
+		'''
+		self.rect = self.image.get_rect()
+		self.x = x
+		self.y = y
+		self.rect.topleft = (self.x, self.y)'''
+
+		self.init_game()
 
 	def init_game(self):
 		self.lives = 5
@@ -52,24 +68,25 @@ class Bricks:
 		self.paddle = pygame.Rect(200, p_y, p_width, p_height)
 		self.ball = pygame.Rect(200, p_y - b_diameter, b_diameter, b_radius)
 		self.ball_v = [-4,4] #velocity of the ball
-
 		self.now_bricks()
 
 	def now_bricks(self):
-		 y = 35
-		 self.bricks = []
-		 for x in range(7):
-		 	z = 35
-		 	for k in range(8):
-		 		self.bricks.append(pygame.Rect(x,y,br_width, br_height))
-		 		x += br_width + 25
-	 		y += br_height + 5
+		y = 35
+		self.bricks = []
+		for x in range(7):
+			z = 35
+			for k in range(8):
+				self.bricks.append(pygame.Rect(x,y,br_width, br_height))
+				x += br_width + 25
+			y += br_height + 5
 
 	def draw_things(self):
 		for brick in self.bricks:
-			pygame.draw.rect(self.screen, brick_color, brick)
-		pygame.draw.rect(self.screen, paddle_color, self.paddle)
-		pygame.draw.circle(self.screen, ball_color, (self.ball.left + b_radius, self.ball.top + b_radius), b_radius)
+			pygame.draw.rect(screen, brick_color, brick)
+			#brick = "logo.png"
+
+		pygame.draw.rect(screen, paddle_color, self.paddle)
+		pygame.draw.circle(screen, ball_color, (self.ball.left + b_radius, self.ball.top + b_radius), b_radius)
 
 	def play_game(self):
 		keys = pygame.key.get_pressed()
@@ -84,9 +101,11 @@ class Bricks:
 			if self.paddle.left > max_paddle:
 				self.paddle.left = max_paddle
 
+		#when the ball is in the paddle - hit SPACE to start
 		if keys[pygame.K_SPACE] and self.state == ball_in_paddle:
 			self.ball_v = [4,-4]
 			self.state = playing
+		#when you completely win or lose all your lives - hit ENTER to restart the game
 		elif keys[pygame.K_RETURN] and (self.state == game_over or self.state == won):
 			self.init_game()
 	
@@ -130,6 +149,7 @@ class Bricks:
 		#status of the game
 		elif self.ball.top > self.paddle.top:
 			self.lives -= 1
+			self.state = playing
 			if self.lives > 0:
 				self.state = ball_in_paddle
 			else:
@@ -142,35 +162,45 @@ class Bricks:
 			font_surface = self.font.render(message,False, ball_color)
 			x = (display_screen[0] - size[0]) / 2
 			y = (display_screen[1] - size[1]) / 2
-			self.screen.blit(font_surface, (x,y))
+			screen.blit(font_surface, (x,y))
+
+	def show_score(self):
+		font = pygame.font.Font(None, 36)
+		score = font.render("SCORE: " + str(self.score) + " LIVES: " + str(self.lives), 1, ball_color)
+		screen.blit(score, (600, 5))
+
 
 	def run(self):
 		while 1:
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					sys.exit
-
-			#self.clock.tick(50)
-			self.screen.fill(background)
+			
 			self.play_game()
 
+			screen.blit(bg_image[self.state], (0,0, screen_w, screen_h), (0,0,screen_w, screen_h))
+	
 			if self.state == playing:
 				self.move_ball()
 				self.handle_collisions()
+				self.draw_things()
 
 			elif self.state == ball_in_paddle:
 				self.ball.left = self.paddle.left + self.paddle.width / 2
 				self.ball.top  = self.paddle.top - self.ball.height
-				pygame.display.set_caption("PRESS SPACE TO LAUNCH THE BALL")
+				pass
 
 			elif self.state == game_over:
-				pygame.display.set_caption("game over... press ENTER to play again")
-			elif self.state == won:
-				pygame.display.set_caption("Congrats!!! press Enter to play again")
+				pass
 
-			self.draw_things()
-			
-			pygame.display.set_caption("SCORE: " + str(self.score) + " LIVES: " + str(self.lives))
+			elif self.state == won:
+				pass
+
+			self.show_score()
+			#located at the top of the game for the player
+			#pygame.display.set_caption("SCORE: " + str(self.score) + " LIVES: " + str(self.lives))
+
+			pygame.display.set_caption("play breakout")
 
 
 			pygame.display.flip()
