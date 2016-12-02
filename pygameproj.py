@@ -233,11 +233,13 @@ class Game(pygame.sprite.Sprite):
 		elif self.state == game_over:
 			self.show_score()
 			self.sound_lose.play()
+			self.show_quit()
 			pygame.display.set_caption("TRY AGAIN?")
 
 		elif self.state == won:
 			self.show_score()
 			self.sound_win.play()
+			self.show_quit()
 			pygame.display.set_caption("CONGRATS!!")
 
 	def run(self):
@@ -248,7 +250,6 @@ class Game(pygame.sprite.Sprite):
 
 			self.play_game()
 			self.status_of_game()
-			self.show_quit()
 
 			pygame.display.flip()
 
